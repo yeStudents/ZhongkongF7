@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:tools="http://schemas.android.com/tools"
+android:layout_width="match_parent"
+android:layout_height="match_parent"
+android:orientation="vertical"
+tools:context="com.example.thankpad.zhongkongf7.Main2Activity">
+
+<EditText
+    android:id="@+id/et_text"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:hint="请输入信息" />
+
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
+    <Button
+        android:id="@+id/bt_tcpstart"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TCP启动" />
+    <Button
+        android:id="@+id/bt_tcpsend1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="发送" />
+
+</LinearLayout>
+
+<EditText
+    android:id="@+id/et_text1"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:hint="接收服务器返回来的信息" />
+</LinearLayout>
