@@ -9,6 +9,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -19,25 +21,14 @@ import java.nio.charset.Charset;
 public class Main2Activity extends AppCompatActivity implements View.OnClickListener {
     private Button bt_tcpstart, bt_tcpsend1;
     private EditText et_text, et_text1;
-    private static final String TAG = "Main2Activity-------->";
-    private static final String addreeip = "192.168.1.16";
-    private static final int port = 4662;
+    private final static String TAG = "Main2Activity-------->";
+    private final static String addreeip = "192.168.2.13";
+    private final static int port = 8080;
     private String app_text, receData;
-    private Socket socket;
+    private Socket socket = null;
     // 获取输出流与输入流
     private OutputStream outputStream = null;
     private InputStream inputStream = null;
-    Handler handler = new Handler(Looper.myLooper()) {
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-            switch (msg.what) {
-                case 0:
-                    et_text1.setText((CharSequence) msg.obj);
-                    break;
-            }
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,27 +57,57 @@ public class Main2Activity extends AppCompatActivity implements View.OnClickList
                         public void run() {
                             try {
                                 socket = new Socket(addreeip, port);
-                                if (socket == null) {
-                                    socket.isConnected();
-                                    Log.i(TAG, "开始连接！！!");
+                                inputStream = socket.getInputStream();
+                                outputStream = socket.getOutputStream();
+                                if (socket.isConnected()) {
+                                    Log.i(TAG, "连接成功！！!");
                                 }
-                                Log.i(TAG, "连接成功！！!");
-                                //连接超时
-                                  socket.setSoTimeout(8000);
+                              new Thread(new Runnable() {
+                                  @Override
+                                  public void run() {
+                                      //连接超时
+                                      //   socket.setSoTimeout(5000);
+                                      // 获取输入流接收信息
+                                      while (socket.isConnected() == true) {
+                                          byte[] buf = new byte[1024];
+                                          int len = 0;
+                                          try {
+                                              len = inputStream.read(buf);
+                                          } catch (IOException e) {
+                                              e.printStackTrace();
+                                          }
+                                          //注意charset.forName 字符编码，utf-8中文。。。。。
+                                          receData = new String(buf, 0, len, Charset.forName("ASCII"));
+                                          Log.i(TAG, receData);
+                                          runOnUiThread(new Runnable() {
+                                              @Override
+                                              public void run() {
+                                                  et_text1.setText(receData);
+                                              }
+                                          });
 
+
+                                      }
+                                  }
+                              }).start();
+                                //连接超时
+                                //   socket.setSoTimeout(5000);
                                 // 获取输入流接收信息
                                 while (socket.isConnected() == true) {
-                                    inputStream = socket.getInputStream();
                                     byte[] buf = new byte[1024];
                                     int len = inputStream.read(buf);
                                     //注意charset.forName 字符编码，utf-8中文。。。。。
                                     receData = new String(buf, 0, len, Charset.forName("ASCII"));
                                     Log.i(TAG, receData);
-                                    Message message = Message.obtain();
-                                    message.obj = receData;
-                                    message.what = 0;
-                                    handler.sendMessage(message);
-                                    handler.sendEmptyMessage(1);
+
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            et_text1.setText(receData);
+                                        }
+                                    });
+
+
                                 }
                             } catch (IOException e) {
                                 e.printStackTrace();
@@ -121,14 +142,13 @@ public class Main2Activity extends AppCompatActivity implements View.OnClickList
                     if (app_text.equals("")) {
                         Log.i(TAG, "输入不能为空");
                     } else {
-                        // 获取输出流发送信息
-                        outputStream = socket.getOutputStream();
                         //注意charset.forName 字符编码，utf-8中文。。。。。
-                        byte[] sendData = app_text.getBytes(Charset.forName("ASCII"));
-                        outputStream.write(sendData, 0, sendData.length);
-                        outputStream.flush();
-//                        socket.shutdownOutput();
-//                        socket.close();
+                        if(outputStream !=null){
+                            byte[] sendData = app_text.getBytes(Charset.forName("ASCII"));
+                            outputStream.write(sendData, 0, sendData.length);
+                            outputStream.flush();
+                        }
+
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -142,7 +162,6 @@ public class Main2Activity extends AppCompatActivity implements View.OnClickList
         super.onDestroy();
         try {
             socket.close();
-            handler.removeCallbacksAndMessages(null);
         } catch (IOException e) {
             e.printStackTrace();
         }
